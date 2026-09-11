@@ -33,6 +33,20 @@ export const registeredSession = async (overrides = {}) => {
   return response.body;
 };
 
+/** A second registered account, for cross-user isolation checks. */
+export const otherRegisteredSession = () =>
+  registeredSession({
+    fName: "Bob",
+    lName: "Smith",
+    email: "bsmith@example.com",
+    username: "bsmith",
+  });
+
+export const bearer = (session) => `Bearer ${session.token}`;
+
+export const createList = (session, name) =>
+  request(app).post("/todo/lists").set("Authorization", bearer(session)).send({ name });
+
 /** Move a user's stored session into the past so it reads as expired. */
 export const expireSession = async (token) => {
   await db.session.update(

@@ -1,7 +1,7 @@
 # Behavior & Rules Reference
 
 **Living snapshot** of product rules currently in force on `dev`.
-Last updated: Feature 1 — User Authentication & Session Management.
+Last updated: Feature 2 — Todo List Management.
 
 These files answer: *"What rules does the app enforce right now?"*
 They do **not** authorize new scope — implement only from `features/feature-*.md`.
@@ -26,6 +26,17 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Every authenticated request resolves to exactly one owner via `req.user.id` | `authorization.js` | Feature 1 FR-008 |
 | Logout clears the token on the session row; replaying it returns `401` | `auth.controller.js` `logout` | Feature 1 US-1.4 |
 
+## List ownership
+
+| Rule | Enforcement | Provenance |
+|------|-------------|------------|
+| Every list endpoint requires a valid session | `list.routes.js` `authenticate` | Feature 2 FR-001 |
+| A list belongs to one user for its whole lifetime; ownership never changes | `list.controller.js` | Feature 2 FR-002 |
+| Reads, updates, and deletes are scoped by `userId: req.user.id` | `getAccessibleListOrNull` in `authorization.js`, `list.controller.js` `findAll` | Feature 2 FR-003 |
+| On create, `userId` comes from the session; a body `userId` is ignored | `list.controller.js` `create` | Feature 2 FR-004 |
+| Another user's list responds `404`, never `403` | `list.controller.js` | Feature 2 Data Ownership |
+| Lists are returned ordered alphabetically by name | `list.controller.js` `findAll` | Feature 2 FR-006 |
+
 ## Validation
 
 | Rule | Enforcement | Provenance |
@@ -36,6 +47,8 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Email format uses shared `emailRules` (`Enter a valid email address.`) | `frontend/src/config/validation.js` | Feature 1 FR-009 |
 | Duplicate username → `Username is already taken.`; duplicate email → `Email is already registered.` | `auth.controller.js` `register` | Feature 1 US-1.1 |
 | Failed login returns one message for both unknown username and wrong password | `auth.controller.js` `login` | Feature 1 US-1.2 |
+| List names are trimmed; empty names rejected with `List name is required.` | `list.controller.js`, `Dashboard.vue` | Feature 2 FR-005 |
+| List names longer than 100 characters rejected with `List name must be 100 characters or fewer.` | `list.controller.js` | Feature 2 US-2.1 |
 
 ## UI rules
 
@@ -46,4 +59,7 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Visiting login or register with a session redirects to home | `router.beforeEach` | Feature 1 US-1.3 |
 | A `401` response clears the stored user and routes to login | `services.js` response interceptor | Feature 1 US-1.3 |
 | Client-side validation blocks submit before any API call | `Login.vue`, `Register.vue` | Feature 1 US-1.1 / US-1.2 |
-| Login, register, and the home placeholder use a full-screen layout (no `MenuBar` yet) | `App.vue` | Feature 1 Screen Requirements |
+| `MenuBar` shows the signed-in user's name and Sign out, and is hidden on login and register | `App.vue`, `MenuBar.vue` | Feature 2 Screen Requirements |
+| The dashboard is a single view with dialog-based add, rename, and delete — no sidebar split | `Dashboard.vue` | Feature 2 FR-007 |
+| An empty lists view shows `No lists yet. Create your first list.` | `Dashboard.vue` | Feature 2 US-2.2 |
+| Row actions are icon-only with `aria-label` `Edit list` / `Delete list` | `Dashboard.vue` | Feature 2 US-2.3 |

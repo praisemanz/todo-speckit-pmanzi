@@ -1,6 +1,6 @@
 # API Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 1 — User Authentication & Session Management.
+**Current integrated state on `dev`.** Last updated: Feature 2 — Todo List Management.
 
 All routes are mounted under `/todo` (see `backend/server.js`).
 
@@ -12,6 +12,10 @@ All routes are mounted under `/todo` (see `backend/server.js`).
 | `POST` | `/todo/register` | No | Create a new user account and open a session |
 | `POST` | `/todo/login` | No | Authenticate and return the session payload |
 | `POST` | `/todo/logout` | Yes | Invalidate the caller's session token |
+| `GET` | `/todo/lists` | Yes | Fetch the caller's lists, sorted by name |
+| `POST` | `/todo/lists` | Yes | Create a list owned by the caller |
+| `PUT` | `/todo/lists/:listId` | Yes | Rename a list owned by the caller |
+| `DELETE` | `/todo/lists/:listId` | Yes | Delete a list owned by the caller |
 
 ### `POST /todo/register`
 
@@ -49,6 +53,35 @@ rather than issuing a second token.
 
 Requires `Authorization: Bearer <token>`. Clears the token on the session row and returns
 `{ "message": "Signed out." }`. Replaying the old token afterwards returns `401`.
+
+### Lists
+
+`GET /todo/lists` returns an array ordered alphabetically by `name`, containing only rows
+where `userId` matches the session owner.
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Groceries",
+    "userId": 42,
+    "createdAt": "2026-07-02T12:00:00.000Z",
+    "updatedAt": "2026-07-02T12:00:00.000Z"
+  }
+]
+```
+
+`POST /todo/lists` takes `{ "name": "Groceries" }` and responds `201` with the created row.
+A `userId` in the request body is ignored — ownership always comes from the session.
+
+`PUT /todo/lists/:listId` takes `{ "name": "Shopping" }` and responds `200` with the updated row.
+
+`DELETE /todo/lists/:listId` responds `200` with `{ "message": "List deleted." }`.
+
+List error cases:
+
+- `400` — `List name is required.`, `List name must be 100 characters or fewer.`, `Invalid list id.`
+- `404` — `List with id=<id> not found.` (also returned when the list belongs to another user)
 
 ## Conventions
 

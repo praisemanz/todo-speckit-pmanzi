@@ -3,6 +3,7 @@ import logger from "../config/logger.js";
 
 const Session = db.session;
 const User = db.user;
+const List = db.list;
 
 const readBearerToken = (req) => {
   const header = req.headers.authorization;
@@ -43,4 +44,10 @@ export const authenticate = async (req, res, next) => {
     logger.error(`Authentication failed: ${err.message}`);
     return res.status(500).send({ message: "Could not authenticate the request." });
   }
+};
+
+/** Row-level scope: a list is reachable only by the user who owns it. */
+export const getAccessibleListOrNull = async (req, listId) => {
+  const row = await List.findOne({ where: { id: listId, userId: req.user.id } });
+  return row ?? null;
 };

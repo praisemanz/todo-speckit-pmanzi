@@ -16,6 +16,7 @@ const signOut = async () => {
     await authServices.logoutUser();
   } finally {
     Utils.removeItem("user");
+    user.value = null;
     signingOut.value = false;
     router.push({ name: "login" });
   }
@@ -23,18 +24,15 @@ const signOut = async () => {
 </script>
 
 <template>
-  <v-container class="py-10">
-    <h1 class="text-h4 mb-2">Welcome, {{ user?.fName }}</h1>
-    <p class="text-body-1 mb-6">You are signed in.</p>
+  <v-app-bar color="primary" flat>
+    <v-app-bar-title>Todo Speckit</v-app-bar-title>
 
-    <v-btn
-      color="primary"
-      variant="elevated"
-      class="oc-cta"
-      :loading="signingOut"
-      @click="signOut"
-    >
-      Sign out
-    </v-btn>
-  </v-container>
+    <template #append>
+      <span v-if="user" class="mr-4">{{ user.fName }} {{ user.lName }}</span>
+
+      <v-btn variant="text" class="oc-cta" :loading="signingOut" @click="signOut">
+        Sign out
+      </v-btn>
+    </template>
+  </v-app-bar>
 </template>
