@@ -1,6 +1,6 @@
 # API Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 2 — Todo List Management.
+**Current integrated state on `dev`.** Last updated: Feature 3 — Todo List Item Management.
 
 All routes are mounted under `/todo` (see `backend/server.js`).
 
@@ -16,6 +16,10 @@ All routes are mounted under `/todo` (see `backend/server.js`).
 | `POST` | `/todo/lists` | Yes | Create a list owned by the caller |
 | `PUT` | `/todo/lists/:listId` | Yes | Rename a list owned by the caller |
 | `DELETE` | `/todo/lists/:listId` | Yes | Delete a list owned by the caller |
+| `GET` | `/todo/lists/:listId/todos` | Yes | Fetch todos in a list owned by the caller |
+| `POST` | `/todo/lists/:listId/todos` | Yes | Add a todo to a list owned by the caller |
+| `PUT` | `/todo/todos/:id` | Yes | Update a todo's title and/or completed flag |
+| `DELETE` | `/todo/todos/:id` | Yes | Delete a todo owned by the caller |
 
 ### `POST /todo/register`
 
@@ -82,6 +86,41 @@ List error cases:
 
 - `400` — `List name is required.`, `List name must be 100 characters or fewer.`, `Invalid list id.`
 - `404` — `List with id=<id> not found.` (also returned when the list belongs to another user)
+
+### Todos
+
+`GET /todo/lists/:listId/todos` returns the list's todos ordered incomplete first, then
+oldest first. The parent list must be owned by the caller, otherwise `404`.
+
+```json
+[
+  {
+    "id": 10,
+    "listId": 1,
+    "title": "Buy milk",
+    "completed": false,
+    "userId": 42,
+    "createdAt": "2026-07-02T12:05:00.000Z",
+    "updatedAt": "2026-07-02T12:05:00.000Z"
+  }
+]
+```
+
+`POST /todo/lists/:listId/todos` takes `{ "title": "Buy milk" }` and responds `201`. New
+todos are always `completed: false`; `userId` comes from the session and `listId` from the
+validated parent list.
+
+`PUT /todo/todos/:id` takes `{ "title": "..." }`, `{ "completed": true }`, or both, and
+responds `200` with the updated row.
+
+`DELETE /todo/todos/:id` responds `200` with `{ "message": "Todo deleted." }`.
+
+Todo error cases:
+
+- `400` — `Todo title is required.`, `Todo title must be 255 characters or fewer.`,
+  `Invalid todo id.`, `Invalid list id.`, `Nothing to update.`, `Completed must be true or false.`
+- `404` — `List with id=<id> not found.` or `Todo with id=<id> not found.` (also returned
+  when the row belongs to another user)
 
 ## Conventions
 

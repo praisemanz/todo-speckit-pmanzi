@@ -4,6 +4,7 @@ import logger from "../config/logger.js";
 const Session = db.session;
 const User = db.user;
 const List = db.list;
+const Todo = db.todo;
 
 const readBearerToken = (req) => {
   const header = req.headers.authorization;
@@ -49,5 +50,11 @@ export const authenticate = async (req, res, next) => {
 /** Row-level scope: a list is reachable only by the user who owns it. */
 export const getAccessibleListOrNull = async (req, listId) => {
   const row = await List.findOne({ where: { id: listId, userId: req.user.id } });
+  return row ?? null;
+};
+
+/** Row-level scope: a todo is reachable only by the user who owns it. */
+export const getAccessibleTodoOrNull = async (req, todoId) => {
+  const row = await Todo.findOne({ where: { id: todoId, userId: req.user.id } });
   return row ?? null;
 };

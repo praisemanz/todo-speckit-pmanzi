@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import listServices from "../services/listServices.js";
+import ListItemsDialog from "../components/ListItemsDialog.vue";
 
 const lists = ref([]);
 const loading = ref(false);
@@ -10,6 +11,8 @@ const errorMessage = ref("");
 const addDialog = ref(false);
 const renameDialog = ref(false);
 const deleteDialog = ref(false);
+const itemsDialog = ref(false);
+const itemsList = ref(null);
 
 const addForm = ref(null);
 const renameForm = ref(null);
@@ -61,6 +64,11 @@ const createList = async () => {
   } finally {
     saving.value = false;
   }
+};
+
+const openItemsDialog = (list) => {
+  itemsList.value = list;
+  itemsDialog.value = true;
 };
 
 const openRenameDialog = (list) => {
@@ -141,6 +149,14 @@ const deleteList = async () => {
           <v-list-item v-for="list in lists" :key="list.id" :title="list.name">
             <template #append>
               <v-btn
+                icon="mdi-format-list-checks"
+                variant="text"
+                size="small"
+                :aria-label="`View items for ${list.name}`"
+                @click="openItemsDialog(list)"
+              />
+
+              <v-btn
                 icon="mdi-pencil"
                 variant="text"
                 size="small"
@@ -160,6 +176,8 @@ const deleteList = async () => {
         </v-list>
       </v-card-text>
     </v-card>
+
+    <ListItemsDialog v-model="itemsDialog" :list="itemsList" />
 
     <v-dialog v-model="addDialog" max-width="480">
       <v-card>
