@@ -1,8 +1,18 @@
 <script setup>
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import MenuBar from "./components/MenuBar.vue";
+
+const AUTH_ROUTES = ["login", "register"];
+
+const route = useRoute();
+const showMenuBar = computed(() => !AUTH_ROUTES.includes(route.name));
 </script>
 
 <template>
   <v-app>
+    <MenuBar v-if="showMenuBar" />
+
     <v-main>
       <router-view />
     </v-main>
