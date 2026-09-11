@@ -23,6 +23,39 @@ const titleError = (title) => {
   return null;
 };
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const DUE_DATE_ERROR = "Due date must be a valid date in YYYY-MM-DD format.";
+
+/** Calendar-only dates: correct shape and a real day on the calendar. */
+const isValidDueDate = (value) => {
+  if (!DATE_ONLY_REGEX.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+};
+
+/** An empty or null due date means "no due date". */
+const readDueDate = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return { dueDate: null };
+  }
+
+  if (typeof value !== "string" || !isValidDueDate(value)) {
+    return { error: DUE_DATE_ERROR };
+  }
+
+  return { dueDate: value };
+};
+
 /** Incomplete items first, then oldest first (FR-009). */
 const TODO_ORDER = [
   ["completed", "ASC"],
@@ -71,6 +104,12 @@ exports.create = async (req, res) => {
     return res.status(400).send({ message: invalid });
   }
 
+  const { dueDate, error } = readDueDate(req.body.dueDate);
+
+  if (error) {
+    return res.status(400).send({ message: error });
+  }
+
   try {
     const list = await getAccessibleListOrNull(req, listId);
 
@@ -79,7 +118,12 @@ exports.create = async (req, res) => {
     }
 
     // Ownership comes from the session and the validated parent list only.
-    const todo = await Todo.create({ title, listId: list.id, userId: req.user.id });
+    const todo = await Todo.create({
+      title,
+      dueDate,
+      listId: list.id,
+      userId: req.user.id,
+    });
 
     return res.status(201).send(todo);
   } catch (err) {
@@ -97,8 +141,10 @@ exports.update = async (req, res) => {
 
   const hasTitle = req.body.title !== undefined;
   const hasCompleted = req.body.completed !== undefined;
+  // Omitting dueDate leaves it alone; sending null clears it (FR-005, FR-006).
+  const hasDueDate = req.body.dueDate !== undefined;
 
-  if (!hasTitle && !hasCompleted) {
+  if (!hasTitle && !hasCompleted && !hasDueDate) {
     return res.status(400).send({ message: "Nothing to update." });
   }
 
@@ -116,6 +162,12 @@ exports.update = async (req, res) => {
     return res.status(400).send({ message: "Completed must be true or false." });
   }
 
+  const { dueDate, error } = readDueDate(req.body.dueDate);
+
+  if (hasDueDate && error) {
+    return res.status(400).send({ message: error });
+  }
+
   try {
     const todo = await getAccessibleTodoOrNull(req, todoId);
 
@@ -129,6 +181,10 @@ exports.update = async (req, res) => {
 
     if (hasCompleted) {
       todo.completed = req.body.completed;
+    }
+
+    if (hasDueDate) {
+      todo.dueDate = dueDate;
     }
 
     await todo.save();
