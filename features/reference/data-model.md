@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 1 — User Authentication & Session Management.
+**Current integrated state on `dev`.** Last updated: Feature 2 — Todo List Management.
 
 ## Tables
 
@@ -31,7 +31,18 @@ hash comparison is required (login).
 | `userId` | INTEGER FK | Required, references `users.id` |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
 
+### `lists`
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `id` | INTEGER PK | Auto-increment |
+| `name` | STRING(100) | Required; trimmed before save |
+| `userId` | INTEGER FK | Required, references `users.id`; set from `req.user.id` on create |
+| `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
+
 ## Associations
 
 - `users` **hasMany** `sessions` (`userId`, `onDelete: CASCADE`)
 - `sessions` **belongsTo** `users` (`userId`)
+- `users` **hasMany** `lists` (`userId`, `onDelete: CASCADE`)
+- `lists` **belongsTo** `users` (`userId`)
