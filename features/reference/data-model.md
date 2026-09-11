@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 2 — Todo List Management.
+**Current integrated state on `dev`.** Last updated: Feature 3 — Todo List Item Management.
 
 ## Tables
 
@@ -40,9 +40,24 @@ hash comparison is required (login).
 | `userId` | INTEGER FK | Required, references `users.id`; set from `req.user.id` on create |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
 
+### `todos`
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `id` | INTEGER PK | Auto-increment |
+| `listId` | INTEGER FK | Required, references `lists.id`; cascade on list delete |
+| `title` | STRING(255) | Required; trimmed before save |
+| `completed` | BOOLEAN | Required, defaults to `false` |
+| `userId` | INTEGER FK | Required, references `users.id`; set from `req.user.id` on create |
+| `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
+
 ## Associations
 
 - `users` **hasMany** `sessions` (`userId`, `onDelete: CASCADE`)
 - `sessions` **belongsTo** `users` (`userId`)
 - `users` **hasMany** `lists` (`userId`, `onDelete: CASCADE`)
 - `lists` **belongsTo** `users` (`userId`)
+- `lists` **hasMany** `todos` (`listId`, `onDelete: CASCADE`)
+- `todos` **belongsTo** `lists` (`listId`)
+- `users` **hasMany** `todos` (`userId`, `onDelete: CASCADE`)
+- `todos` **belongsTo** `users` (`userId`)
