@@ -1,6 +1,6 @@
 # API Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 3 — Todo List Item Management.
+**Current integrated state on `dev`.** Last updated: Feature 4 — User Profile Management.
 
 All routes are mounted under `/todo` (see `backend/server.js`).
 
@@ -20,6 +20,8 @@ All routes are mounted under `/todo` (see `backend/server.js`).
 | `POST` | `/todo/lists/:listId/todos` | Yes | Add a todo to a list owned by the caller |
 | `PUT` | `/todo/todos/:id` | Yes | Update a todo's title and/or completed flag |
 | `DELETE` | `/todo/todos/:id` | Yes | Delete a todo owned by the caller |
+| `GET` | `/todo/users/:id` | Yes | Fetch the caller's own profile |
+| `PUT` | `/todo/users/:id` | Yes | Update the caller's own profile |
 
 ### `POST /todo/register`
 
@@ -121,6 +123,35 @@ Todo error cases:
   `Invalid todo id.`, `Invalid list id.`, `Nothing to update.`, `Completed must be true or false.`
 - `404` — `List with id=<id> not found.` or `Todo with id=<id> not found.` (also returned
   when the row belongs to another user)
+
+### Profile
+
+Both profile routes are self-access only: `:id` must equal the session owner's id, otherwise
+`404`. Responses never include the password hash.
+
+```json
+{
+  "id": 42,
+  "fName": "Jane",
+  "lName": "Doe",
+  "email": "jane@example.com",
+  "username": "jdoe",
+  "role": "worker",
+  "createdAt": "2026-07-02T12:00:00.000Z",
+  "updatedAt": "2026-07-02T12:05:00.000Z"
+}
+```
+
+`PUT /todo/users/:id` takes `{ fName, lName, email, username }` plus an optional `password`.
+Omitting `password` leaves the stored hash untouched; supplying one re-hashes with bcrypt.
+`role` is read-only.
+
+Profile error cases:
+
+- `400` — `First name is required.`, `Last name is required.`, `Email is required.`,
+  `Username is required.`, `Password must be at least 8 characters.`,
+  `Username is already taken.`, `Email is already registered.`, `Invalid user id.`
+- `404` — `User with id=<id> not found.` (also returned for another user's id)
 
 ## Conventions
 
