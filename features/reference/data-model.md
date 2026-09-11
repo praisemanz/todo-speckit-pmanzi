@@ -20,6 +20,9 @@
 `password` is excluded by a Sequelize `defaultScope`; use `User.unscoped()` only where a
 hash comparison is required (login).
 
+`fName`, `lName`, `email`, and `username` are editable through `PUT /todo/users/:id`;
+`password` is optional on that call and `role` is read-only (Feature 4).
+
 ### `sessions`
 
 | Field | Type | Rules |

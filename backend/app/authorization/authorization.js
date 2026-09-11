@@ -53,6 +53,16 @@ export const getAccessibleListOrNull = async (req, listId) => {
   return row ?? null;
 };
 
+/** Row-level scope: a profile is reachable only by its own owner. */
+export const getAccessibleUserOrNull = async (req, userId) => {
+  if (userId !== req.user.id) {
+    return null;
+  }
+
+  const row = await User.findByPk(userId);
+  return row ?? null;
+};
+
 /** Row-level scope: a todo is reachable only by the user who owns it. */
 export const getAccessibleTodoOrNull = async (req, todoId) => {
   const row = await Todo.findOne({ where: { id: todoId, userId: req.user.id } });

@@ -1,7 +1,7 @@
 # Behavior & Rules Reference
 
 **Living snapshot** of product rules currently in force on `dev`.
-Last updated: Feature 3 — Todo List Item Management.
+Last updated: Feature 4 — User Profile Management.
 
 These files answer: *"What rules does the app enforce right now?"*
 They do **not** authorize new scope — implement only from `features/feature-*.md`.
@@ -50,6 +50,18 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Deleting a list cascades to its todos | `models/index.js` `onDelete: CASCADE` | Feature 3 FR-008 |
 | Todos are returned incomplete first, then oldest first | `todo.controller.js` `TODO_ORDER` | Feature 3 FR-009 |
 
+## Profile ownership
+
+| Rule | Enforcement | Provenance |
+|------|-------------|------------|
+| Both profile endpoints require a valid session | `user.routes.js` `authenticate` | Feature 4 FR-001 |
+| A user may read and update only their own row (`:id` must equal `req.user.id`) | `getAccessibleUserOrNull` | Feature 4 FR-002 |
+| Another user's profile responds `404`, never `403` | `user.controller.js` | Feature 4 FR-003 |
+| Password is optional on update; when present it is bcrypt-hashed, else left unchanged | `user.controller.js` `update` | Feature 4 FR-005 |
+| Username is normalized to `trim().toLowerCase()` on save | `user.controller.js` `update` | Feature 4 FR-006 |
+| Profile responses are built field by field so the hash can never leak | `profilePayload` in `user.controller.js` | Feature 4 FR-007 |
+| `role` is read-only — not editable through the profile API | `user.controller.js` `update` | Feature 4 Data Model |
+
 ## Validation
 
 | Rule | Enforcement | Provenance |
@@ -74,7 +86,11 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Visiting login or register with a session redirects to home | `router.beforeEach` | Feature 1 US-1.3 |
 | A `401` response clears the stored user and routes to login | `services.js` response interceptor | Feature 1 US-1.3 |
 | Client-side validation blocks submit before any API call | `Login.vue`, `Register.vue` | Feature 1 US-1.1 / US-1.2 |
-| `MenuBar` shows the signed-in user's name and Sign out, and is hidden on login and register | `App.vue`, `MenuBar.vue` | Feature 2 Screen Requirements |
+| `MenuBar` is hidden on login and register | `App.vue` | Feature 2 Screen Requirements |
+| `MenuBar` shows a user icon opening a profile dropdown with full name, username, email, Edit Profile, and Log out | `MenuBar.vue` | Feature 4 US-4.1 |
+| Logout lives only in the profile dropdown — no standalone Sign out button | `MenuBar.vue` | Feature 4 US-4.4 |
+| Saving the profile refreshes `localStorage` `user` (keeping the token) and dispatches `user-logged-in` | `MenuBar.vue` | Feature 4 FR-008 |
+| Edit Profile mirrors the registration rules, including shared `emailRules` | `MenuBar.vue` | Feature 4 FR-009 |
 | The dashboard is a single view with dialog-based add, rename, and delete — no sidebar split | `Dashboard.vue` | Feature 2 FR-007 |
 | An empty lists view shows `No lists yet. Create your first list.` | `Dashboard.vue` | Feature 2 US-2.2 |
 | Row actions are icon-only with `aria-label` `Edit list` / `Delete list` | `Dashboard.vue` | Feature 2 US-2.3 |
