@@ -47,11 +47,11 @@ export const bearer = (session) => `Bearer ${session.token}`;
 export const createList = (session, name) =>
   request(app).post("/todo/lists").set("Authorization", bearer(session)).send({ name });
 
-export const createTodo = (session, listId, title) =>
+export const createTodo = (session, listId, title, extraFields = {}) =>
   request(app)
     .post(`/todo/lists/${listId}/todos`)
     .set("Authorization", bearer(session))
-    .send({ title });
+    .send({ title, ...extraFields });
 
 /** Move a user's stored session into the past so it reads as expired. */
 export const expireSession = async (token) => {

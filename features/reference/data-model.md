@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 3 — Todo List Item Management.
+**Current integrated state on `dev`.** Last updated: Feature 5 — Todo Due Date.
 
 ## Tables
 
@@ -51,6 +51,7 @@ hash comparison is required (login).
 | `listId` | INTEGER FK | Required, references `lists.id`; cascade on list delete |
 | `title` | STRING(255) | Required; trimmed before save |
 | `completed` | BOOLEAN | Required, defaults to `false` |
+| `dueDate` | DATEONLY | Nullable; calendar-only `YYYY-MM-DD`, `null` means no due date |
 | `userId` | INTEGER FK | Required, references `users.id`; set from `req.user.id` on create |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
 

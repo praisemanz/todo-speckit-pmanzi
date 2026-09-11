@@ -1,6 +1,6 @@
 # API Reference
 
-**Current integrated state on `dev`.** Last updated: Feature 4 — User Profile Management.
+**Current integrated state on `dev`.** Last updated: Feature 5 — Todo Due Date.
 
 All routes are mounted under `/todo` (see `backend/server.js`).
 
@@ -101,6 +101,7 @@ oldest first. The parent list must be owned by the caller, otherwise `404`.
     "listId": 1,
     "title": "Buy milk",
     "completed": false,
+    "dueDate": "2026-07-15",
     "userId": 42,
     "createdAt": "2026-07-02T12:05:00.000Z",
     "updatedAt": "2026-07-02T12:05:00.000Z"
@@ -108,19 +109,23 @@ oldest first. The parent list must be owned by the caller, otherwise `404`.
 ]
 ```
 
-`POST /todo/lists/:listId/todos` takes `{ "title": "Buy milk" }` and responds `201`. New
-todos are always `completed: false`; `userId` comes from the session and `listId` from the
-validated parent list.
+`POST /todo/lists/:listId/todos` takes `{ "title": "Buy milk" }` plus an optional
+`dueDate` and responds `201`. New todos are always `completed: false`; `userId` comes from
+the session and `listId` from the validated parent list.
 
-`PUT /todo/todos/:id` takes `{ "title": "..." }`, `{ "completed": true }`, or both, and
+`PUT /todo/todos/:id` takes any combination of `title`, `completed`, and `dueDate`, and
 responds `200` with the updated row.
+
+`dueDate` is a calendar-only `YYYY-MM-DD` string, or `null` for no due date. Omitting it on
+`PUT` leaves the stored value unchanged; sending `null` clears it.
 
 `DELETE /todo/todos/:id` responds `200` with `{ "message": "Todo deleted." }`.
 
 Todo error cases:
 
 - `400` — `Todo title is required.`, `Todo title must be 255 characters or fewer.`,
-  `Invalid todo id.`, `Invalid list id.`, `Nothing to update.`, `Completed must be true or false.`
+  `Invalid todo id.`, `Invalid list id.`, `Nothing to update.`, `Completed must be true or false.`,
+  `Due date must be a valid date in YYYY-MM-DD format.`
 - `404` — `List with id=<id> not found.` or `Todo with id=<id> not found.` (also returned
   when the row belongs to another user)
 

@@ -4,6 +4,9 @@
  *
  * Feature 3 — Todo List Item Management
  * Spec: features/feature-3-todo-list-item-management.md
+ *
+ * Feature 5 — Todo Due Date
+ * Spec: features/feature-5-todo-due-date.md
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { DOMWrapper, flushPromises } from "@vue/test-utils";
@@ -261,7 +264,10 @@ describe("Feature 3 — List items dialog", () => {
       await dialog().find('input[name="newTodoTitle"]').setValue("Buy milk");
       await clickButton(dialog(), "Add");
 
-      expect(todoServices.createTodo).toHaveBeenCalledWith(7, { title: "Buy milk" });
+      expect(todoServices.createTodo).toHaveBeenCalledWith(7, {
+        title: "Buy milk",
+        dueDate: null,
+      });
       expect(dialog().text()).toContain("Buy milk");
     });
 
@@ -351,7 +357,10 @@ describe("Feature 3 — List items dialog", () => {
       await dialog().find('input[name="editTodoTitle"]').setValue("Buy oat milk");
       await clickButton(dialog(), "Save");
 
-      expect(todoServices.updateTodo).toHaveBeenCalledWith(10, { title: "Buy oat milk" });
+      expect(todoServices.updateTodo).toHaveBeenCalledWith(10, {
+        title: "Buy oat milk",
+        dueDate: null,
+      });
       expect(dialog().text()).toContain("Buy oat milk");
     });
 
@@ -374,6 +383,143 @@ describe("Feature 3 — List items dialog", () => {
 
       expect(todoServices.deleteTodo).toHaveBeenCalledWith(10);
       expect(dialog().text()).toContain("No todos in this list yet.");
+    });
+  });
+});
+
+/** Built from local calendar parts so the offset cannot drift across timezones. */
+const localDate = (offsetDays) => {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offsetDays);
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+describe("Feature 5 — Todo due dates", () => {
+  describe("US-5.1 — Set a due date when creating a todo", () => {
+    it("User adds a todo with a due date", async () => {
+      listServices.getLists.mockResolvedValue({ data: [GROCERIES] });
+      todoServices.getTodos.mockResolvedValueOnce({ data: [] }).mockResolvedValueOnce({
+        data: [{ id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: "2026-07-15" }],
+      });
+      todoServices.createTodo.mockResolvedValue({
+        data: { id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: "2026-07-15" },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItems(wrapper, "Groceries");
+      await clickButton(dialog(), "+ Add Item");
+
+      await dialog().find('input[name="newTodoTitle"]').setValue("Buy milk");
+      await dialog().find('input[name="newTodoDueDate"]').setValue("2026-07-15");
+      await clickButton(dialog(), "Add");
+
+      expect(todoServices.createTodo).toHaveBeenCalledWith(7, {
+        title: "Buy milk",
+        dueDate: "2026-07-15",
+      });
+      expect(dialog().text()).toContain("Jul 15, 2026");
+    });
+  });
+
+  describe("US-5.3 — Edit or clear a due date", () => {
+    it("User sets a due date when editing a todo", async () => {
+      listServices.getLists.mockResolvedValue({ data: [GROCERIES] });
+      todoServices.getTodos
+        .mockResolvedValueOnce({
+          data: [{ id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: null }],
+        })
+        .mockResolvedValueOnce({
+          data: [
+            { id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: "2026-07-20" },
+          ],
+        });
+      todoServices.updateTodo.mockResolvedValue({
+        data: { id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: "2026-07-20" },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItems(wrapper, "Groceries");
+
+      await dialog().find('[aria-label="Edit todo"]').trigger("click");
+      await settle();
+
+      expect(dialog().find('input[name="editTodoDueDate"]').element.value).toBe("");
+
+      await dialog().find('input[name="editTodoDueDate"]').setValue("2026-07-20");
+      await clickButton(dialog(), "Save");
+
+      expect(todoServices.updateTodo).toHaveBeenCalledWith(10, {
+        title: "Buy milk",
+        dueDate: "2026-07-20",
+      });
+      expect(dialog().text()).toContain("Jul 20, 2026");
+    });
+
+    it("User clears a due date when editing a todo", async () => {
+      listServices.getLists.mockResolvedValue({ data: [GROCERIES] });
+      todoServices.getTodos
+        .mockResolvedValueOnce({
+          data: [
+            { id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: "2026-07-20" },
+          ],
+        })
+        .mockResolvedValueOnce({
+          data: [{ id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: null }],
+        });
+      todoServices.updateTodo.mockResolvedValue({
+        data: { id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: null },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItems(wrapper, "Groceries");
+
+      await dialog().find('[aria-label="Edit todo"]').trigger("click");
+      await settle();
+
+      expect(dialog().find('input[name="editTodoDueDate"]').element.value).toBe("2026-07-20");
+
+      await dialog().find('input[name="editTodoDueDate"]').setValue("");
+      await clickButton(dialog(), "Save");
+
+      expect(todoServices.updateTodo).toHaveBeenCalledWith(10, {
+        title: "Buy milk",
+        dueDate: null,
+      });
+      expect(dialog().text()).not.toContain("Jul 20, 2026");
+    });
+  });
+
+  describe("US-5.4 — Spot overdue todos", () => {
+    it("Incomplete todo past due date is styled as overdue", async () => {
+      listServices.getLists.mockResolvedValue({ data: [GROCERIES] });
+      todoServices.getTodos.mockResolvedValue({
+        data: [
+          { id: 10, listId: 7, title: "Buy milk", completed: false, dueDate: localDate(-1) },
+        ],
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItems(wrapper, "Groceries");
+
+      expect(dialog().find(".text-error").exists()).toBe(true);
+    });
+
+    it("Completed todo past due date is not styled as overdue", async () => {
+      listServices.getLists.mockResolvedValue({ data: [GROCERIES] });
+      todoServices.getTodos.mockResolvedValue({
+        data: [{ id: 10, listId: 7, title: "Buy milk", completed: true, dueDate: localDate(-1) }],
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItems(wrapper, "Groceries");
+
+      expect(dialog().text()).toContain("Due ");
+      expect(dialog().find(".text-error").exists()).toBe(false);
     });
   });
 });

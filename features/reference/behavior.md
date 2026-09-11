@@ -1,7 +1,7 @@
 # Behavior & Rules Reference
 
 **Living snapshot** of product rules currently in force on `dev`.
-Last updated: Feature 4 — User Profile Management.
+Last updated: Feature 5 — Todo Due Date.
 
 These files answer: *"What rules does the app enforce right now?"*
 They do **not** authorize new scope — implement only from `features/feature-*.md`.
@@ -76,6 +76,8 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | List names longer than 100 characters rejected with `List name must be 100 characters or fewer.` | `list.controller.js` | Feature 2 US-2.1 |
 | Todo titles are trimmed; empty titles rejected with `Todo title is required.` | `todo.controller.js`, `ListItemsDialog.vue` | Feature 3 FR-006 |
 | Todo titles longer than 255 characters rejected with `Todo title must be 255 characters or fewer.` | `todo.controller.js` | Feature 3 edge cases |
+| `dueDate` is optional and calendar-only; invalid values rejected with `Due date must be a valid date in YYYY-MM-DD format.` | `readDueDate` in `todo.controller.js` | Feature 5 FR-002/FR-004 |
+| Sending `dueDate: null` clears it; omitting it on update leaves it unchanged | `todo.controller.js` `update` | Feature 5 FR-005/FR-006 |
 
 ## UI rules
 
@@ -99,3 +101,6 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Opening the items dialog fetches only that list's todos | `ListItemsDialog.vue` watcher | Feature 3 US-3.2 |
 | An empty items dialog shows `No todos in this list yet.` | `ListItemsDialog.vue` | Feature 3 US-3.2 |
 | Completed todos render with struck-through title text | `ListItemsDialog.vue` | Feature 3 US-3.3 |
+| Todo rows show a formatted due date when one is set | `ListItemsDialog.vue`, `formatDueDate` | Feature 5 US-5.2 |
+| Only incomplete todos past today's local date get overdue (error-coloured) styling | `isTodoOverdue` in `config/validation.js` | Feature 5 FR-008 |
+| Add-item and edit-item dialogs expose an optional date field; clearing it removes the due date | `ListItemsDialog.vue` | Feature 5 US-5.1/US-5.3 |
