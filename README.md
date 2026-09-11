@@ -279,7 +279,7 @@ Or call the scripts directly: `node scripts/bundle-frontend.mjs`, etc.
 
 CI tests run on push to `main` and on pull requests to `main` or `dev` via [.github/workflows/test.yml](.github/workflows/test.yml).
 
-Deploy workflows require GitHub secrets (`SERVER_SSH_KEY`, `REMOTE_HOST`, `DB_*`, etc.). See workflow files for the full list.
+Deploy workflows require GitHub secrets (`SERVER_SSH_KEY`, `REMOTE_HOST`, `DB_*`, etc.). See workflow files for the full list. When `SERVER_SSH_KEY`, `REMOTE_HOST` or `REMOTE_USER` is unset, the deploy jobs skip themselves and only the tests run — so a clone without a target server still gets a green pipeline.
 
 ---
 

@@ -8,8 +8,29 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
 
+  # The `secrets` context is unavailable in job-level `if`, so server
+  # availability has to be resolved into a job output first.
+  check-server:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        run: |
+          if [ -n "$SSH_KEY" ] && [ -n "$REMOTE_HOST" ] && [ -n "$REMOTE_USER" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::Set SERVER_SSH_KEY, REMOTE_HOST and REMOTE_USER to enable deployment."
+          fi
+
   deploy-frontend:
-    needs: test
+    needs: [test, check-server]
+    if: needs.check-server.outputs.configured == 'true'
     runs-on: ubuntu-latest
 
     defaults:
@@ -40,7 +61,8 @@ jobs:
           ARGS: "-rltgoDzvO --delete"
 
   deploy-backend:
-    needs: test
+    needs: [test, check-server]
+    if: needs.check-server.outputs.configured == 'true'
     runs-on: ubuntu-latest
 
     env:
