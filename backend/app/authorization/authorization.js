@@ -1,8 +1,46 @@
-/**
- * Authorization helpers — implement when Feature auth is specified.
- * See .cursor/rules/auth-patterns.mdc and security.mdc.
- */
+import db from "../models/index.js";
+import logger from "../config/logger.js";
 
-export function authenticate() {
-  throw new Error("authenticate() not implemented — add per feature auth spec");
-}
+const Session = db.session;
+const User = db.user;
+
+const readBearerToken = (req) => {
+  const header = req.headers.authorization;
+
+  if (!header || !header.startsWith("Bearer ")) {
+    return null;
+  }
+
+  return header.slice("Bearer ".length).trim() || null;
+};
+
+export const authenticate = async (req, res, next) => {
+  const token = readBearerToken(req);
+
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized! No session token provided." });
+  }
+
+  try {
+    const session = await Session.findOne({
+      where: { token },
+      include: [{ model: User }],
+    });
+
+    if (!session || !session.user) {
+      return res.status(401).send({ message: "Unauthorized! Invalid session token." });
+    }
+
+    if (new Date(session.expirationDate).getTime() < Date.now()) {
+      return res.status(401).send({ message: "Unauthorized! Session has expired." });
+    }
+
+    req.user = { id: session.user.id, role: session.user.role };
+    req.session = session;
+
+    return next();
+  } catch (err) {
+    logger.error(`Authentication failed: ${err.message}`);
+    return res.status(500).send({ message: "Could not authenticate the request." });
+  }
+};
